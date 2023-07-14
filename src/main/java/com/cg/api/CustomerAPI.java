@@ -3,7 +3,11 @@ package com.cg.api;
 import com.cg.exception.DataInputException;
 import com.cg.exception.EmailExistsException;
 import com.cg.model.Customer;
+import com.cg.model.Deposit;
+import com.cg.model.Withdraw;
+import com.cg.model.dto.WithdrawReqDTO;
 import com.cg.model.dto.customer.*;
+import com.cg.model.dto.deposit.DepositCreReqDTO;
 import com.cg.model.dto.locationRegion.LocationRegionReqDTO;
 import com.cg.service.customer.ICustomerService;
 import com.cg.utils.AppUtils;
@@ -14,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -136,6 +141,42 @@ public class CustomerAPI {
         CustomerUpdateResDTO customerUpdateResDTO = customer.toCustomerUpdateResDTO();
 
         return new ResponseEntity<>(customerUpdateResDTO, HttpStatus.OK);
+    }
+
+    @PostMapping("/withdraw/{customerId}")
+    public ResponseEntity<?> withdraw(@PathVariable("customerId") String customerIdStr, @RequestBody WithdrawReqDTO withdrawReqDTO, BindingResult bindingResult) {
+
+        new WithdrawReqDTO().validate(withdrawReqDTO, bindingResult);
+
+        if (bindingResult.hasFieldErrors()) {
+            return appUtils.mapErrorToResponse(bindingResult);
+        }
+
+        if (!ValidateUtils.isNumberValid(customerIdStr)) {
+            Map<String, String> data = new HashMap<>();
+            data.put("message", "Mã khách hàng không hợp lệ");
+            return new ResponseEntity<>(data, HttpStatus.BAD_REQUEST);
+        }
+
+        Long customerId = Long.parseLong(customerIdStr);
+
+        Optional<Customer> customerOptional = customerService.findById(customerId);
+
+        if (customerOptional.isEmpty()) {
+            Map<String, String> data = new HashMap<>();
+            data.put("message", "Mã khách hàng không tồn tại");
+            return new ResponseEntity<>(data, HttpStatus.BAD_REQUEST);
+        }
+
+        Customer customer = customerOptional.get();
+
+        BigDecimal transactionAmount = BigDecimal.valueOf(Long.parseLong(withdrawReqDTO.getTransactionAmount()));
+
+        Withdraw withdraw = new Withdraw();
+        withdraw.setTransactionAmount(transactionAmount);
+        withdraw.setCustomer(customer);
+        Customer newCustomer = customerService.withdraw(withdraw);
+        return new ResponseEntity<>(newCustomer, HttpStatus.OK);
     }
 
 }

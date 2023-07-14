@@ -1,19 +1,14 @@
 package com.cg.service.customer;
 
 import com.cg.exception.DataInputException;
-import com.cg.model.Customer;
-import com.cg.model.Deposit;
-import com.cg.model.LocationRegion;
-import com.cg.model.Transfer;
+import com.cg.model.*;
+import com.cg.model.dto.WithdrawReqDTO;
 import com.cg.model.dto.customer.CustomerCreReqDTO;
 import com.cg.model.dto.customer.CustomerCreResDTO;
 import com.cg.model.dto.customer.CustomerResDTO;
 import com.cg.model.dto.locationRegion.LocationRegionCreReqDTO;
 import com.cg.model.dto.transfer.TransferCreReqDTO;
-import com.cg.repository.CustomerRepository;
-import com.cg.repository.DepositRepository;
-import com.cg.repository.LocationRegionRepository;
-import com.cg.repository.TransferRepository;
+import com.cg.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +30,9 @@ public class CustomerServiceImpl implements ICustomerService {
 
     @Autowired
     private TransferRepository transferRepository;
+    @Autowired
+    private WithdrawRepository withdrawRepository;
+
 
     @Autowired
     private LocationRegionRepository locationRegionRepository;
@@ -101,6 +99,22 @@ public class CustomerServiceImpl implements ICustomerService {
     }
 
     @Override
+    public Customer withdraw(Withdraw withdraw) {
+        withdraw.setId(null);
+        withdrawRepository.save(withdraw);
+
+        Customer customer = withdraw.getCustomer();
+        BigDecimal transactionAmount = withdraw.getTransactionAmount();
+
+        customerRepository.decrementBalance(customer.getId(), transactionAmount);
+
+        BigDecimal newBalance = customer.getBalance().subtract(transactionAmount);
+        customer.setBalance(newBalance);
+
+        return customer;
+    }
+
+    @Override
     public void transfer(TransferCreReqDTO transferCreReqDTO) {
         Long senderId = transferCreReqDTO.getSenderId();
         Long recipientId = transferCreReqDTO.getRecipientId();
@@ -113,7 +127,7 @@ public class CustomerServiceImpl implements ICustomerService {
            throw new DataInputException("Mã người nhận không tồn tại");
         });
 
-        BigDecimal transferAmount = transferCreReqDTO.getTransferAmount();
+        BigDecimal transferAmount = BigDecimal.valueOf(Long.parseLong(transferCreReqDTO.getTransferAmount())) ;
         long fees = 10L;
         BigDecimal feesAmount = transferAmount.multiply(BigDecimal.valueOf(fees)).divide(BigDecimal.valueOf(100L));
         BigDecimal transactionAmount = transferAmount.add(feesAmount);

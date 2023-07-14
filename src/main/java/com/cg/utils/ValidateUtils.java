@@ -22,7 +22,7 @@ public class ValidateUtils {
         return Pattern.compile(LETTER_WITHOUT_NUMBER_REGEX).matcher(name).matches();
     }
 
-    public boolean isEmailValid(String email) {
+    public static boolean isEmailValid(String email) {
         return Pattern.compile(EMAIL_REGEX).matcher(email).matches();
     }
 

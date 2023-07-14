@@ -2,6 +2,7 @@ package com.cg.model.dto.customer;
 
 import com.cg.model.Customer;
 import com.cg.model.dto.locationRegion.LocationRegionReqDTO;
+import com.cg.utils.ValidateUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,7 +42,6 @@ public class CustomerUpdateReqDTO implements Validator {
         CustomerUpdateReqDTO customer = (CustomerUpdateReqDTO) target;
 
         String fullName = customer.fullName;
-//        String address = customer.address;
 
         if (fullName == null) {
             errors.rejectValue("fullName", "fullName.null", "Họ tên là bắt buộc");
@@ -51,7 +51,7 @@ public class CustomerUpdateReqDTO implements Validator {
                 errors.rejectValue("fullName", "fullName.empty", "Họ tên là không được rỗng");
             }
             else {
-                if (fullName.trim().length() > 20) {
+                if (fullName.trim().length() > 30) {
                     errors.rejectValue("fullName", "fullName.length.max", "Họ tên không được quá 20 ký tự");
                 }
                 if (fullName.trim().length() < 5) {
@@ -60,21 +60,14 @@ public class CustomerUpdateReqDTO implements Validator {
             }
         }
 
-//        if (address == null) {
-//            errors.rejectValue("address", "address.null", "Địa chỉ là bắt buộc");
-//        }
-//        else {
-//            if (address.trim().length() == 0) {
-//                errors.rejectValue("address", "address.empty", "Địa chỉ là không được rỗng");
-//            }
-//            else {
-//                if (address.trim().length() > 20) {
-//                    errors.rejectValue("address", "address.length.max", "Địa chỉ không được quá 20 ký tự");
-//                }
-//                if (address.trim().length() < 5) {
-//                    errors.rejectValue("address", "address.length.min", "Địa chỉ không được nhỏ hơn 5 ký tự");
-//                }
-//            }
-//        }
+        String email = customer.email;
+        if (email.length() == 0) {
+            errors.rejectValue("email", "email.empty ", "Email là bắt buộc ");
+        } else {
+            if (!ValidateUtils.isEmailValid(email)) {
+                errors.rejectValue("email", "email.valid",
+                        "Email không đúng định dạng vui lòng nhập (example : abc22@gmail.com)");
+            }
+        }
     }
 }

@@ -135,3 +135,32 @@ page.dialogs.elements.frmUpdate.validate({
         page.dialogs.commands.update();
     }
 })
+
+page.dialogs.elements.frmWithdraw.validate({
+    rules: {
+        transactionAmountWd: {
+            required: true
+        }
+    },
+    messages: {
+        transactionAmountWd: {
+            required: 'Số tiền muốn rút là bắt buộc'
+        }
+    },
+    errorLabelContainer: "#modalWithdraw .error-area",
+    errorPlacement: function (error, element) {
+        error.appendTo("#modalWithdraw .error-area");
+    },
+    showErrors: function(errorMap, errorList) {
+        if (this.numberOfInvalids() > 0) {
+            page.dialogs.elements.errorAreaWithdraw.removeClass("hide").addClass("show");
+        } else {
+            page.dialogs.elements.errorAreaWithdraw.removeClass("show").addClass("hide").empty();
+            $("#frmWithdraw input.error").removeClass("error");
+        }
+        this.defaultShowErrors();
+    },
+    submitHandler: function () {
+        page.dialogs.commands.withdraw();
+    }
+})

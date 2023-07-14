@@ -60,6 +60,7 @@
     <th:block th:replace="customer/modalDeposit" />
     <th:block th:replace="customer/modalTransfer" />
     <th:block th:replace="customer/modalUpdate"/>
+    <th:block th:replace="customer/modalWithdraw"/>
 
     <script src="/assets/js/jquery-3.6.0.min.js"></script>
     <script src="/assets/js/jquery.validate.min.js"></script>
@@ -132,6 +133,15 @@
         page.dialogs.elements.balanceDep = $('#balanceDep');
         page.dialogs.elements.transactionAmountDep = $('#transactionAmountDep');
         page.dialogs.elements.btnDeposit = $('#btnDeposit');
+
+        page.dialogs.elements.modalWithdraw = $('#modalWithdraw');
+        page.dialogs.elements.errorAreaWithdraw = $('#modalWithdraw .error-area');
+        page.dialogs.elements.frmWithdraw = $('#frmWithdraw');
+        page.dialogs.elements.fullNameWd = $('#fullNameWd');
+        page.dialogs.elements.emailWd = $('#emailWd');
+        page.dialogs.elements.balanceWd = $('#balanceWd');
+        page.dialogs.elements.transactionAmountWd = $('#transactionAmountWd');
+        page.dialogs.elements.btnWithdraw = $('#btnWithdraw');
 
         page.dialogs.elements.modalTransfer = $('#modalTransfer');
         page.dialogs.elements.errorAreaTransfer = $('#modalTransfer .error-area');
@@ -369,6 +379,22 @@
                 });
         }
 
+        page.commands.handleAddEventShowModalWithdraw = (customerId) => {
+            page.commands.getCustomerById(customerId).then((data) => {
+                customer = data;
+                page.dialogs.elements.fullNameWd.val(customer.fullName);
+                page.dialogs.elements.emailWd.val(customer.email);
+                page.dialogs.elements.balanceWd.val(customer.balance);
+                page.dialogs.elements.transactionAmountWd.val(0);
+
+
+                page.dialogs.elements.modalWithdraw.modal('show');
+            })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+
         page.commands.handleAddEventShowModalTransfer = (customerId) => {
             page.commands.getCustomerById(customerId).then((data) => {
                 customer = data;
@@ -376,7 +402,7 @@
                 page.dialogs.elements.emailTrf.val(customer.email);
                 page.dialogs.elements.balanceTrf.val(customer.balance);
 
-                page.commands.getALlRecipients(customerId);
+                page.commands.getAllRecipients(customerId);
 
                 page.dialogs.elements.modalTransfer.modal('show');
             })
@@ -554,7 +580,7 @@
 
 
         page.dialogs.commands.deposit = () => {
-            const transactionAmount = +$('#transactionAmountDep').val();
+            const transactionAmount = $('#transactionAmountDep').val();
 
             const obj = {
                 customerId,
@@ -595,10 +621,67 @@
                 })
         }
 
+        page.dialogs.commands.withdraw = () => {
+            // const currentBalance = customer.balance;
+            const transactionAmount = $('#transactionAmountWd').val();
+            // const newBalance = currentBalance + transactionAmount;
+            // customer.balance = newBalance;
+            //
+            // deposit.id = null;
+            // deposit.customerId = customerId;
+            // deposit.transactionAmount = transactionAmount;
+
+            const obj = {
+                transactionAmount
+            }
+
+            $.ajax({
+                headers: {
+                    'accept': 'application/json',
+                    'content-type': 'application/json'
+                },
+                type: 'POST',
+                url: page.url.withdraw + '/' + customerId,
+                data: JSON.stringify(obj)
+            })
+                .done((data) => {
+                    customer = data;
+                    locationRegion = customer.locationRegion;
+                    const str = page.commands.renderCustomer(customer,locationRegion);
+
+                    const currentRow = $('#tr_' + customerId);
+                    currentRow.replaceWith(str);
+
+                    page.dialogs.elements.modalWithdraw.modal('hide');
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Rút tiền thành công',
+                        showConfirmButton: false,
+                        timer: 1500
+                    })
+                })
+                .fail((jqXHR) => {
+                    const responseJSON = jqXHR.responseJSON;
+
+                    page.dialogs.elements.errorAreaWithdraw.empty();
+                    let str = '';
+
+                    $.each(responseJSON, (k, v) => {
+                        str += `<label for="${k}Wd">${v}</label>`
+                    })
+
+                    page.dialogs.elements.errorAreaWithdraw.append(str).removeClass('hide').addClass('show');
+
+                    console.log(jqXHR);
+                })
+
+        }
+
         page.dialogs.commands.transfer = () => {
             const senderId = customerId;
             const recipientId = +page.dialogs.elements.recipients.val();
-            const transferAmount = +page.dialogs.elements.transferAmountTrf.val();
+            const transferAmount = page.dialogs.elements.transferAmountTrf.val();
 
             const obj = {
                 senderId,
@@ -705,6 +788,11 @@
                 customerId = $(this).data('id');
                 page.commands.handleAddEventShowModalDeposit(customerId);
             })
+            page.elements.footer.on('click', '.withdraw', function () {
+                customerId = $(this).data('id');
+                console.log(customerId)
+                page.commands.handleAddEventShowModalWithdraw(customerId);
+            })
 
             page.elements.footer.on('click', '.transfer', function () {
                 customerId = $(this).data('id');
@@ -735,6 +823,9 @@
             page.dialogs.elements.btnTransfer.on('click', () => {
                 page.dialogs.elements.frmTransfer.trigger('submit');
             })
+            page.dialogs.elements.btnWithdraw.on('click', () => {
+                page.dialogs.elements.frmWithdraw.trigger('submit');
+            })
             page.dialogs.elements.btnUpdate.on('click', () => {
                 // alert('OK');
                 page.dialogs.elements.frmUpdate.trigger('submit');
@@ -760,6 +851,18 @@
                 page.dialogs.elements.frmDeposit.find("input.error").removeClass("error");
                 page.dialogs.elements.errorAreaDeposit.empty().removeClass("show").addClass("hide");
             }
+            page.dialogs.commands.closeModalUpdate = () => {
+                page.dialogs.elements.frmUpdate[0].reset();
+                page.dialogs.elements.frmUpdate.validate().resetForm();
+                page.dialogs.elements.frmUpdate.find("input.error").removeClass("error");
+                page.dialogs.elements.errorAreaUpdate.empty().removeClass("show").addClass("hide");
+            }
+            page.dialogs.commands.closeModalWithdraw = () => {
+                page.dialogs.elements.frmWithdraw[0].reset();
+                page.dialogs.elements.frmWithdraw.validate().resetForm();
+                page.dialogs.elements.frmWithdraw.find("input.error").removeClass("error");
+                page.dialogs.elements.errorAreaWithdraw.empty().removeClass("show").addClass("hide");
+            }
 
             page.dialogs.elements.modalCreate.on("hidden.bs.modal", function () {
                 page.dialogs.commands.closeModalCreate();
@@ -770,6 +873,12 @@
             });
             page.dialogs.elements.modalDeposit.on("hidden.bs.modal", function () {
                 page.dialogs.commands.closeModalDeposit();
+            });
+            page.dialogs.elements.modalWithdraw.on("hidden.bs.modal", function () {
+                page.dialogs.commands.closeModalWithdraw();
+            });
+            page.dialogs.elements.modalUpdate.on("hidden.bs.modal", function () {
+                page.dialogs.commands.closeModalUpdate();
             });
 
         }

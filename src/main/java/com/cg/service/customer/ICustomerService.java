@@ -1,9 +1,6 @@
 package com.cg.service.customer;
 
-import com.cg.model.Customer;
-import com.cg.model.Deposit;
-import com.cg.model.LocationRegion;
-import com.cg.model.Transfer;
+import com.cg.model.*;
 import com.cg.model.dto.customer.CustomerCreReqDTO;
 import com.cg.model.dto.customer.CustomerCreResDTO;
 import com.cg.model.dto.customer.CustomerResDTO;
@@ -28,6 +25,7 @@ public interface ICustomerService extends IGeneralService<Customer, Long> {
     CustomerCreResDTO create(CustomerCreReqDTO customerCreReqDTO);
 
     Customer deposit(Deposit deposit);
+    Customer withdraw(Withdraw withdraw);
 
     void transfer(TransferCreReqDTO transferCreReqDTO);
 
